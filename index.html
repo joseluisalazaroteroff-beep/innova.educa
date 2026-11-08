@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Innova Educa - Pupiletras</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            margin: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            overflow-x: hidden;
+        }
+
+        /* --- Header Styles --- */
+        .header-title {
+            color: #005c8a;
+        }
+
+        /* --- Grid Styles --- */
+        .grid-wrapper {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            touch-action: none; /* Previene el scroll al arrastrar en móviles */
+        }
+
+        .grid-container {
+            display: grid;
+            gap: 1px;
+            background-color: #cbd5e1;
+            border: 4px solid #94a3b8;
+            border-radius: 8px;
+            padding: 2px;
+            width: 100%;
+            max-width: 550px;
+            aspect-ratio: 1 / 1;
+        }
+        
+        .grid-cell {
+            background-color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            color: #1e293b;
+            cursor: pointer;
+            font-size: min(3.5vw, 1.1rem);
+            text-transform: uppercase;
+        }
+
+        @media (min-width: 768px) {
+            .grid-cell { font-size: 1rem; }
+        }
+
+        .grid-cell.highlighted {
+            background-color: #bae6fd; 
+            color: #0369a1;
+        }
+
+        .grid-cell.found {
+            background-color: #86efac; 
+            color: #14532d;
+        }
+        
+        .grid-cell.error {
+            background-color: #fca5a5;
+            color: #7f1d1d;
+            transition: background-color 0.3s;
+        }
+
+        /* --- Word List Styles --- */
+        .word-list li {
+            transition: all 0.3s ease;
+            position: relative;
+            padding-left: 1.5rem;
+        }
+        .word-list li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: #005c8a;
+        }
+        .word-list li.found-word {
+            text-decoration: line-through;
+            color: #16a34a;
+            opacity: 0.6;
+        }
+        .word-list li.found-word::before {
+            content: '✓';
+            color: #16a34a;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- CABECERA -->
+    <header class="w-full relative flex items-center justify-center p-4 bg-white shadow-md h-20">
+        <h1 class="text-3xl md:text-4xl font-black header-title tracking-tight text-center">
+            Innova Educa
+        </h1>
+        <div class="absolute right-4 md:right-8 top-1/2 transform -translate-y-1/2">
+            <!-- Busca la imagen 'logo.png' en la misma carpeta. Altura máxima 60px -->
+            <img src="logo.png" alt="Innova Schools" class="max-h-[60px] object-contain">
+        </div>
+    </header>
+
+    <!-- VISTA: MENÚ PRINCIPAL -->
+    <main id="view-menu" class="w-full max-w-4xl mx-auto p-6 md:p-12 flex-1 flex flex-col justify-center">
+        <h2 class="text-center text-2xl text-gray-600 mb-8 font-bold">Selecciona un juego para empezar</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+            
+            <!-- Tarjeta Matemática -->
+            <div class="cursor-pointer group flex flex-col bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-200 hover:shadow-2xl transition-all transform hover:-translate-y-2" onclick="openGame('math')">
+                <div class="bg-[#003058] text-white text-center py-4 text-2xl font-bold uppercase tracking-wider">
+                    Matemática
+                </div>
+                <div class="p-8 flex items-center justify-center bg-blue-50 h-48 md:h-64">
+                    <span class="text-blue-900 font-bold text-xl px-6 py-3 rounded-full bg-white border-2 border-blue-200 shadow-sm group-hover:bg-blue-100 transition">
+                        ▶ Jugar Sopa de Letras
+                    </span>
+                </div>
+            </div>
+
+            <!-- Tarjeta Comunicación -->
+            <div class="cursor-pointer group flex flex-col bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-200 hover:shadow-2xl transition-all transform hover:-translate-y-2" onclick="openGame('comm')">
+                <div class="bg-[#003058] text-white text-center py-4 text-2xl font-bold uppercase tracking-wider">
+                    Comunicación
+                </div>
+                <div class="p-8 flex items-center justify-center bg-blue-50 h-48 md:h-64">
+                    <span class="text-blue-900 font-bold text-xl px-6 py-3 rounded-full bg-white border-2 border-blue-200 shadow-sm group-hover:bg-blue-100 transition">
+                        ▶ Jugar Sopa de Letras
+                    </span>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- VISTA: JUEGO -->
+    <main id="view-game" class="hidden w-full max-w-6xl mx-auto p-4 md:p-6 flex-1 flex flex-col">
+        
+        <!-- Barra superior del juego -->
+        <div class="flex flex-col md:flex-row items-center justify-between mb-6 border-b pb-4 gap-4">
+            <button onclick="closeGame()" class="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition font-bold shadow-sm">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                Volver al menú
+            </button>
+            
+            <h2 id="game-title" class="text-2xl md:text-3xl font-black text-[#005c8a] text-center uppercase"></h2>
+            
+            <div class="bg-white border-2 border-gray-300 text-gray-800 px-6 py-2 rounded-full font-bold text-lg md:text-xl shadow-sm whitespace-nowrap flex gap-4">
+                <span>Puntos totales: <span id="ui-score" class="text-blue-600">0</span></span>
+                <span class="text-gray-300">|</span>
+                <span>Racha 🔥: <span id="ui-streak" class="text-orange-500">0</span></span>
+            </div>
+        </div>
+
+        <!-- Área Principal del Juego -->
+        <div class="flex flex-col lg:flex-row gap-8 items-start w-full">
+            
+            <!-- Lista de Palabras -->
+            <div class="w-full lg:w-1/3 bg-white rounded-xl p-6 border shadow-sm flex flex-col">
+                <h3 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Palabras a buscar:</h3>
+                <ul id="word-list" class="word-list flex flex-col gap-3 text-sm md:text-base font-bold text-gray-600">
+                    <!-- Generado por JS -->
+                </ul>
+            </div>
+
+            <!-- Cuadrícula -->
+            <div class="w-full lg:w-2/3 flex justify-center bg-white p-2 md:p-6 rounded-xl border shadow-sm">
+                <div class="grid-wrapper">
+                    <div id="word-grid" class="grid-container">
+                        <!-- Generado por JS -->
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </main>
+
+    <!-- MODAL DE VICTORIA -->
+    <div id="modal-win" class="fixed inset-0 hidden z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full text-center transform scale-100 transition-transform relative">
+            <div id="modal-emoji" class="text-6xl mb-4">🏆</div>
+            <h2 id="modal-title" class="text-3xl font-black text-[#005c8a] mb-2">¡Nivel Completado!</h2>
+            <p id="modal-message" class="text-gray-600 text-lg mb-6">Has encontrado todas las palabras.</p>
+            
+            <div class="bg-blue-50 text-blue-900 font-bold text-xl py-4 rounded-xl mb-6 border border-blue-200">
+                Puntos Ganados: <span id="modal-points" class="text-2xl">0</span>
+                <div id="modal-streak-info" class="text-orange-500 text-sm mt-1 hidden">¡Bono Perfecto! +1 Racha 🔥</div>
+            </div>
+            
+            <button onclick="closeModalAndReturn()" class="w-full bg-[#005c8a] text-white font-bold py-3 px-4 rounded-xl hover:bg-blue-800 transition shadow-lg text-lg">
+                Continuar
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Configuración de los juegos
+        const gamesConfig = {
+            'math': {
+                title: 'Matemática',
+                size: 22,
+                displayWords: [
+                    'PROPIEDAD DE MONOTONIA', 
+                    'MAYOR QUE MENOR QUE', 
+                    'ECUACIONES', 
+                    'INECUACIONES', 
+                    'EL METODO DE POLYA'
+                ]
+            },
+            'comm': {
+                title: 'Comunicación',
+                size: 22,
+                displayWords: [
+                    'TEN EN CUENTA LA ESTRUCTURA', 
+                    'CONTEXTO MAS PISTAS', 
+                    'IGUAL A CLARIDAD', 
+                    'LINEA DE TIEMPO', 
+                    'DEDUCIR CAUSAS Y CONSECUENCIAS'
+                ]
+            }
+        };
+
+        // Estado Global
+        let globalScore = 0;
+        let globalStreak = 0;
+        let currentGame = null;
+
+        // Referencias a Elementos UI
+        const viewMenu = document.getElementById('view-menu');
+        const viewGame = document.getElementById('view-game');
+        const modalWin = document.getElementById('modal-win');
+        const uiScore = document.getElementById('ui-score');
+        const uiStreak = document.getElementById('ui-streak');
+
+        // Funciones de Navegación
+        function openGame(type) {
+            viewMenu.classList.add('hidden');
+            viewGame.classList.remove('hidden');
+            
+            const config = gamesConfig[type];
+            document.getElementById('game-title').textContent = config.title;
+            
+            if(currentGame) currentGame.destroy();
+            currentGame = new WordSearchGame(config);
+        }
+
+        function closeGame() {
+            viewGame.classList.add('hidden');
+            viewMenu.classList.remove('hidden');
+            if(currentGame) currentGame.destroy();
+        }
+
+        function closeModalAndReturn() {
+            modalWin.classList.add('hidden');
+            closeGame();
+        }
+
+        // Lógica del Juego
+        class WordSearchGame {
+            constructor(config) {
+                // Preparar palabras (las de búsqueda van sin espacios)
+                this.displayWords = config.displayWords;
+                this.searchWords = this.displayWords.map(w => w.replace(/\s+/g, '').toUpperCase());
+                
+                this.size = config.size;
+                this.grid = [];
+                this.cells = [];
+                this.foundWords = new Set();
+                
+                // Variables de ronda
+                this.roundStartScore = globalScore;
+                this.errorsMade = 0;
+                
+                // Referencias DOM
+                this.container = document.getElementById('word-grid');
+                this.listContainer = document.getElementById('word-list');
+                
+                // Estado de interacción
+                this.isDragging = false;
+                this.startCell = null;
+                this.currentPath = [];
+
+                this.init();
+            }
+
+            init() {
+                this.generateGridData();
+                this.renderGrid();
+                this.renderList();
+                this.bindEvents();
+                this.updateGlobalUI();
+            }
+
+            destroy() {
+                // Clonar y reemplazar para eliminar event listeners globales si los hubiera
+                const newContainer = this.container.cloneNode(false);
+                this.container.parentNode.replaceChild(newContainer, this.container);
+                this.container = newContainer;
+            }
+
+            // --- LÓGICA DE PUNTOS Y RACHA --- //
+            addScore(points) {
+                globalScore += points;
+                // Prevenir puntos negativos totales
+                if(globalScore < 0) globalScore = 0; 
+                this.updateGlobalUI();
+            }
+
+            recordError() {
+                this.errorsMade++;
+                this.addScore(-5);
+                
+                // Efecto visual de error en las celdas seleccionadas
+                this.currentPath.forEach(pos => {
+                    const idx = pos.r * this.size + pos.c;
+                    const cell = this.cells[idx];
+                    cell.classList.add('error');
+                    setTimeout(() => cell.classList.remove('error'), 400);
+                });
+            }
+
+            updateGlobalUI() {
+                uiScore.textContent = globalScore;
+                uiStreak.textContent = globalStreak;
+            }
+
+            checkWinCondition() {
+                if (this.foundWords.size === this.searchWords.length) {
+                    let pointsEarnedThisRound = globalScore - this.roundStartScore;
+                    let isPerfect = (this.errorsMade === 0);
+
+                    if (isPerfect) {
+                        // Bono perfecto: ajustar puntaje de la ronda a 100
+                        const perfectBonus = 100 - pointsEarnedThisRound;
+                        if (perfectBonus > 0) {
+                            this.addScore(perfectBonus);
+                        }
+                        pointsEarnedThisRound = 100;
+                        globalStreak++;
+                        this.updateGlobalUI();
+                        
+                        document.getElementById('modal-emoji').textContent = "🔥";
+                        document.getElementById('modal-title').textContent = "¡Racha Perfecta!";
+                        document.getElementById('modal-message').textContent = "Encontraste todo sin cometer errores.";
+                        document.getElementById('modal-streak-info').classList.remove('hidden');
+                    } else {
+                        // Resetea racha si hubo errores
+                        globalStreak = 0; 
+                        this.updateGlobalUI();
+
+                        document.getElementById('modal-emoji').textContent = "👍";
+                        document.getElementById('modal-title').textContent = "¡Completado!";
+                        document.getElementById('modal-message').textContent = `Tuviste ${this.errorsMade} errores, pero lo lograste.`;
+                        document.getElementById('modal-streak-info').classList.add('hidden');
+                    }
+
+                    document.getElementById('modal-points').textContent = pointsEarnedThisRound;
+                    setTimeout(() => modalWin.classList.remove('hidden'), 500);
+                }
+            }
+
+            // --- GENERACIÓN DE CUADRÍCULA --- //
+            generateGridData() {
+                for (let r = 0; r < this.size; r++) {
+                    this.grid[r] = new Array(this.size).fill('');
+                }
+
+                const directions = [
+                    [0, 1], [1, 0], [1, 1], [-1, 1], 
+                    [0, -1], [-1, 0], [-1, -1], [1, -1] 
+                ];
+
+                this.searchWords.forEach(word => {
+                    let placed = false;
+                    let attempts = 0;
+                    while (!placed && attempts < 2000) {
+                        attempts++;
+                        let dir = directions[Math.floor(Math.random() * directions.length)];
+                        let r = Math.floor(Math.random() * this.size);
+                        let c = Math.floor(Math.random() * this.size);
+
+                        if (this.canPlaceWord(word, r, c, dir)) {
+                            for (let i = 0; i < word.length; i++) {
+                                this.grid[r + dir[0] * i][c + dir[1] * i] = word[i];
+                            }
+                            placed = true;
+                        }
+                    }
+                });
+
+                const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+                for (let r = 0; r < this.size; r++) {
+                    for (let c = 0; c < this.size; c++) {
+                        if (this.grid[r][c] === '') {
+                            this.grid[r][c] = alphabet[Math.floor(Math.random() * alphabet.length)];
+                        }
+                    }
+                }
+            }
+
+            canPlaceWord(word, r, c, dir) {
+                for (let i = 0; i < word.length; i++) {
+                    let nr = r + dir[0] * i;
+                    let nc = c + dir[1] * i;
+                    if (nr < 0 || nr >= this.size || nc < 0 || nc >= this.size) return false;
+                    if (this.grid[nr][nc] !== '' && this.grid[nr][nc] !== word[i]) return false;
+                }
+                return true;
+            }
+
+            // --- RENDERIZADO --- //
+            renderGrid() {
+                this.container.innerHTML = '';
+                this.container.style.gridTemplateColumns = `repeat(${this.size}, minmax(0, 1fr))`;
+                this.cells = [];
+
+                for (let r = 0; r < this.size; r++) {
+                    for (let c = 0; c < this.size; c++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'grid-cell';
+                        cell.textContent = this.grid[r][c];
+                        cell.dataset.r = r;
+                        cell.dataset.c = c;
+                        this.container.appendChild(cell);
+                        this.cells.push(cell);
+                    }
+                }
+            }
+
+            renderList() {
+                this.listContainer.innerHTML = '';
+                this.displayWords.forEach((displayWord, index) => {
+                    const li = document.createElement('li');
+                    li.textContent = displayWord;
+                    li.id = `word-${index}`;
+                    this.listContainer.appendChild(li);
+                });
+            }
+
+            // --- INTERACCIÓN Y EVENTOS --- //
+            bindEvents() {
+                // Mouse
+                this.container.addEventListener('mousedown', (e) => this.startSelection(e.target));
+                document.addEventListener('mousemove', (e) => this.moveSelection(e.target));
+                document.addEventListener('mouseup', () => this.endSelection());
+
+                // Touch (Móviles)
+                this.container.addEventListener('touchstart', (e) => {
+                    e.preventDefault(); 
+                    const touch = e.touches[0];
+                    const target = document.elementFromPoint(touch.clientX, touch.clientY);
+                    this.startSelection(target);
+                }, { passive: false });
+
+                document.addEventListener('touchmove', (e) => {
+                    if (!this.isDragging) return;
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    const target = document.elementFromPoint(touch.clientX, touch.clientY);
+                    this.moveSelection(target);
+                }, { passive: false });
+
+                document.addEventListener('touchend', () => this.endSelection());
+            }
+
+            startSelection(target) {
+                if (!target || !target.classList.contains('grid-cell')) return;
+                this.isDragging = true;
+                this.startCell = { r: parseInt(target.dataset.r), c: parseInt(target.dataset.c) };
+                this.clearHighlight();
+                this.highlightCell(this.startCell.r, this.startCell.c);
+            }
+
+            moveSelection(target) {
+                if (!this.isDragging || !this.startCell || !target || !target.classList.contains('grid-cell')) return;
+
+                const currR = parseInt(target.dataset.r);
+                const currC = parseInt(target.dataset.c);
+
+                const dr = currR - this.startCell.r;
+                const dc = currC - this.startCell.c;
+                
+                // Solo permitir líneas rectas y diagonales perfectas
+                if (Math.abs(dr) === Math.abs(dc) || dr === 0 || dc === 0) {
+                    this.clearHighlight();
+                    this.currentPath = [];
+                    
+                    const steps = Math.max(Math.abs(dr), Math.abs(dc));
+                    const stepR = steps === 0 ? 0 : dr / steps;
+                    const stepC = steps === 0 ? 0 : dc / steps;
+
+                    for (let i = 0; i <= steps; i++) {
+                        const nr = this.startCell.r + (stepR * i);
+                        const nc = this.startCell.c + (stepC * i);
+                        this.currentPath.push({ r: nr, c: nc });
+                        this.highlightCell(nr, nc);
+                    }
+                }
+            }
+
+            endSelection() {
+                if (!this.isDragging) return;
+                this.isDragging = false;
+                
+                if (this.currentPath.length > 1) { // Ignorar clics simples
+                    this.checkWord(this.currentPath);
+                } else {
+                    this.clearHighlight();
+                }
+                
+                this.startCell = null;
+                this.currentPath = [];
+            }
+
+            highlightCell(r, c) {
+                const index = r * this.size + c;
+                if (this.cells[index] && !this.cells[index].classList.contains('found')) {
+                    this.cells[index].classList.add('highlighted');
+                }
+            }
+
+            clearHighlight() {
+                this.cells.forEach(cell => cell.classList.remove('highlighted'));
+            }
+
+            checkWord(path) {
+                let str = path.map(pos => this.grid[pos.r][pos.c]).join('');
+                let reversedStr = str.split('').reverse().join('');
+
+                let matchedWord = null;
+                let wordIndex = -1;
+
+                for (let i = 0; i < this.searchWords.length; i++) {
+                    const searchWord = this.searchWords[i];
+                    if ((str === searchWord || reversedStr === searchWord) && !this.foundWords.has(searchWord)) {
+                        matchedWord = searchWord;
+                        wordIndex = i;
+                        break;
+                    }
+                }
+
+                if (matchedWord) {
+                    // ¡Acierto!
+                    this.foundWords.add(matchedWord);
+                    this.addScore(10);
+                    
+                    path.forEach(pos => {
+                        const index = pos.r * this.size + pos.c;
+                        this.cells[index].classList.remove('highlighted');
+                        this.cells[index].classList.add('found');
+                    });
+
+                    document.getElementById(`word-${wordIndex}`).classList.add('found-word');
+                    this.checkWinCondition();
+                } else {
+                    // ¡Error!
+                    this.recordError();
+                    this.clearHighlight();
+                }
+            }
+        }
+    </script>
+</body>
+</html>
